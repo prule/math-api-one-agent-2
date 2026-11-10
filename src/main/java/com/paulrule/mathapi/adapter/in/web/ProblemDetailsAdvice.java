@@ -1,5 +1,6 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -55,6 +56,11 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UnknownOperationException.class)
     ProblemDetail unknownOperation(UnknownOperationException ex) {
         return problem(HttpStatus.BAD_REQUEST, "unknown-operation", "Unknown operation", ex.getMessage());
+    }
+
+    @ExceptionHandler(DivisionByZeroException.class)
+    ProblemDetail divisionByZero(DivisionByZeroException ex) {
+        return problem(HttpStatus.UNPROCESSABLE_CONTENT, "division-by-zero", "Division by zero", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

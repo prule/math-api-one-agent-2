@@ -3,6 +3,7 @@ package com.paulrule.mathapi.adapter.in.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.paulrule.mathapi.config.UseCaseConfig;
+import com.paulrule.mathapi.domain.UnknownOperationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -36,6 +37,10 @@ class CalculationControllerTest {
                 "{\"operation\": \"SUBTRACT\", \"a\": \"1.5\", \"b\": \"1.50\"}        | 0",
                 "{\"operation\": \"MULTIPLY\", \"a\": \"-7.25\", \"b\": \"0\"}         | 0",
                 "{\"operation\": \"MULTIPLY\", \"a\": 1e3, \"b\": \"1\"}               | 1000",
+                "{\"operation\": \"DIVIDE\", \"a\": 1, \"b\": \"3\"}                 | 0.3333333333333333333333333333333333",
+                "{\"operation\": \"DIVIDE\", \"a\": 1, \"b\": 4}                       | 0.25",
+                "{\"operation\": \"DIVIDE\", \"a\": \"100\", \"b\": \"0.5\"}       | 200",
+                "{\"operation\": \"DIVIDE\", \"a\": \"10000000000000000000000000000000015\", \"b\": \"10\"} | 1000000000000000000000000000000002",
             })
     void returnsTheExactResultNormalisedPerBR4(String body, String result) {
         assertThat(post(body))
@@ -62,7 +67,7 @@ class CalculationControllerTest {
         assertThat(result)
                 .bodyJson()
                 .extractingPath("$.detail")
-                .isEqualTo("Unknown operation 'NOT_AN_OPERATION'. Supported operations: ADD, SUBTRACT, MULTIPLY.");
+                .isEqualTo(new UnknownOperationException("NOT_AN_OPERATION").getMessage());
     }
 
     @Test
@@ -88,6 +93,15 @@ class CalculationControllerTest {
             })
     void rejectsAnInvalidRequestBeforeLookingAtTheOperation(String body) {
         assertProblem(post(body), 400, "/problems/invalid-request");
+    }
+
+    @ParameterizedTest(name = "{0} ÷ {1}")
+    @CsvSource({"1, 0", "1, '\"0.00\"'", "1, '\"-0\"'", "1, '\"0E+3\"'", "0, 0"})
+    void rejectsDivisionByZeroPerBR2(String a, String zero) {
+        assertProblem(
+                post("{\"operation\": \"DIVIDE\", \"a\": " + a + ", \"b\": " + zero + "}"),
+                422,
+                "/problems/division-by-zero");
     }
 
     @Test
