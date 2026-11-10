@@ -8,7 +8,7 @@
 
 | # | Item | Status | OpenSpec change |
 |---|------|--------|-----------------|
-| 1 | Walking skeleton | Not started | |
+| 1 | Walking skeleton | Done | `add-walking-skeleton` |
 | 2 | Exact operations: add, subtract, multiply | Not started | |
 | 3 | Divide | Not started | |
 | 4 | Operand limits | Not started | |
