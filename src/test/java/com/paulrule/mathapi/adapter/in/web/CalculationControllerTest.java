@@ -1,17 +1,23 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import com.paulrule.mathapi.config.UseCaseConfig;
 import com.paulrule.mathapi.domain.UnknownOperationException;
+import java.time.Duration;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -104,12 +110,122 @@ class CalculationControllerTest {
                 "/problems/division-by-zero");
     }
 
+    @ParameterizedTest(name = "b = {0}")
+    @MethodSource("operandsOnePastEachLimit")
+    void rejectsAnOperandOutOfRangeWithoutEchoingItPerBR1(String operand) {
+        MvcTestResult result = post("{\"operation\": \"ADD\", \"a\": 1, \"b\": \"" + operand + "\"}");
+
+        assertProblem(result, 400, "/problems/operand-out-of-range");
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.detail")
+                .asString()
+                .startsWith("Operand b ")
+                .doesNotContain(operand);
+    }
+
+    static Stream<String> operandsOnePastEachLimit() {
+        return Stream.of("1E+1001", "1E-1001", "1" + "0".repeat(100));
+    }
+
+    @Test
+    void acceptsOperandsAtTheLimitsPerBR1() {
+        assertThat(post("{\"operation\": \"ADD\", \"a\": \"1E+1000\", \"b\": \"1E-1000\"}"))
+                .hasStatusOk();
+        assertThat(post("{\"operation\": \"ADD\", \"a\": \"" + "9".repeat(100) + "\", \"b\": 1}"))
+                .hasStatusOk();
+    }
+
+    @Test
+    void reportsTheFirstOutOfRangeOperandPerBR1() {
+        assertThat(post("{\"operation\": \"ADD\", \"a\": \"1E+1001\", \"b\": \"1E-1001\"}"))
+                .bodyJson()
+                .extractingPath("$.detail")
+                .asString()
+                .startsWith("Operand a ");
+    }
+
+    @Test
+    void rejectsHugeExponentsImmediatelyPerBR1() {
+        MvcTestResult result = assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> post("{\"operation\": \"MULTIPLY\", \"a\": \"1e999999999\", \"b\": \"1e999999999\"}"));
+
+        assertProblem(result, 400, "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void rejectsAnOversizedBodyStatingTheLimits() {
+        MvcTestResult result = post(validBodyPaddedTo(16_385));
+
+        assertProblem(result, 400, "/problems/invalid-request");
+        assertThat(result)
+                .bodyJson()
+                .extractingPath("$.detail")
+                .asString()
+                .contains("16,384 characters")
+                .contains("1,000");
+    }
+
+    @Test
+    void acceptsABodyAtTheSizeLimit() {
+        assertThat(post(validBodyPaddedTo(16_384))).hasStatusOk();
+    }
+
+    // Pads inside the object so the parser must read every character.
+    private static String validBodyPaddedTo(int length) {
+        String body = "{\"operation\": \"ADD\", \"a\": 1, \"b\": 2}";
+        String padded = "{" + " ".repeat(length - body.length()) + body.substring(1);
+        assertThat(padded).hasSize(length);
+        return padded;
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("overlongValues")
+    void rejectsAnOverlongValueWhileParsing(String name, String body) {
+        assertProblem(post(body), 400, "/problems/invalid-request");
+    }
+
+    static Stream<Arguments> overlongValues() {
+        String digits = "1".repeat(1_001);
+        return Stream.of(
+                Arguments.of("number Operand", "{\"operation\": \"ADD\", \"a\": " + digits + ", \"b\": 1}"),
+                Arguments.of("string Operand", "{\"operation\": \"ADD\", \"a\": \"" + digits + "\", \"b\": 1}"),
+                Arguments.of("operation", "{\"operation\": \"" + "A".repeat(1_001) + "\", \"a\": 1, \"b\": 1}"));
+    }
+
+    @Test
+    void parsesAStringAtTheLengthLimitThenAppliesBR1() {
+        assertProblem(
+                post("{\"operation\": \"ADD\", \"a\": \"" + "1".repeat(1_000) + "\", \"b\": 1}"),
+                400,
+                "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void reportsAnUnknownOperationBeforeOperandLimits() {
+        assertProblem(
+                post("{\"operation\": \"NOPE\", \"a\": \"1E+1001\", \"b\": 1}"), 400, "/problems/unknown-operation");
+    }
+
+    @Test
+    void reportsOperandLimitsBeforeDivisionByZero() {
+        assertProblem(
+                post("{\"operation\": \"DIVIDE\", \"a\": \"1E+1001\", \"b\": 0}"),
+                400,
+                "/problems/operand-out-of-range");
+    }
+
+    // BR-1 rejects every input known to reach the 500 handler, so it is called directly.
     @Test
     void reportsAnUnexpectedFailureWithoutInternals() {
-        assertProblem(
-                post("{\"operation\": \"MULTIPLY\", \"a\": \"1e-2000000000\", \"b\": \"1e-2000000000\"}"),
-                500,
-                "about:blank");
+        ProblemDetail problem =
+                new ProblemDetailsAdvice().unexpected(new IllegalStateException("secret internal state"));
+
+        assertThat(problem.getStatus()).isEqualTo(500);
+        assertThat(problem.getType()).hasToString("about:blank");
+        assertThat(problem.getTitle()).isNotBlank();
+        assertThat(problem.getDetail()).isEqualTo("The calculation could not be completed.");
     }
 
     @Test
