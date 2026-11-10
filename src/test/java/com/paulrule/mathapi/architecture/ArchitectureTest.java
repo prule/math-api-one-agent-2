@@ -17,12 +17,9 @@ class ArchitectureTest {
     private static final String WEB = "com.paulrule.mathapi.adapter.in.web..";
     private static final String CONFIG = "com.paulrule.mathapi.config..";
 
-    // shortcut: optional layers and allowEmptyShould let the rules pass while layers are empty;
-    // remove both once every layer has a class (backlog item 2).
     @ArchTest
     static final ArchRule LAYERS_DEPEND_INWARDS = layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
-            .withOptionalLayers(true)
             .layer("Domain")
             .definedBy(DOMAIN)
             .layer("Application")
@@ -46,8 +43,7 @@ class ArchitectureTest {
             .resideInAPackage(DOMAIN)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage("org.springframework..", "jakarta..", "com.fasterxml..", "tools.jackson..")
-            .allowEmptyShould(true);
+            .resideInAnyPackage("org.springframework..", "jakarta..", "com.fasterxml..", "tools.jackson..");
 
     @ArchTest
     static final ArchRule APPLICATION_HAS_NO_WEB_OR_ADAPTERS = noClasses()
@@ -55,6 +51,5 @@ class ArchitectureTest {
             .resideInAPackage(APPLICATION)
             .should()
             .dependOnClassesThat()
-            .resideInAnyPackage("org.springframework.web..", "com.paulrule.mathapi.adapter..")
-            .allowEmptyShould(true);
+            .resideInAnyPackage("org.springframework.web..", "com.paulrule.mathapi.adapter..");
 }
