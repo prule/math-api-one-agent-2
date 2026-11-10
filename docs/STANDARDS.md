@@ -33,9 +33,10 @@ Dependency rule — arrows point inwards only:
 
 ```
 adapter.in.web ──► application ──► domain
-config ──────────► all
+config ──────────► application, domain
 ```
 
+- `config` wires use cases into beans; adapters are found by component scanning, so nothing (not even `config`) depends on `adapter.in.web`, and nothing depends on `config`.
 - `domain` MUST NOT import Spring, Jakarta, Jackson or any framework. Plain Java only.
 - `application` MUST NOT import Spring web or adapter types. Use cases are plain classes wired in `config`.
 - `adapter.in.web` MUST NOT contain business rules; it parses, delegates, maps.
@@ -58,7 +59,7 @@ config ──────────► all
 - Errors MUST be RFC 9457 Problem Details via Spring `ProblemDetail`, from a single `@RestControllerAdvice`. Each error has a stable `type` URI listed in the PRD.
 - Status codes: `400` invalid input; `422` valid input that violates a domain rule.
 - Every endpoint MUST appear correctly in the generated OpenAPI docs: an explicit `@ApiResponse` for each status it returns (including the 200's media type, which springdoc otherwise documents as `*/*`), and a `application/problem+json` example for each Problem Details `type`. `ApiDocumentationTest` enforces this; extend it with every new endpoint or error type.
-- Documented values that come from the domain (e.g. allowed `operation` names) MUST be generated from it (`config.OpenApiConfig`), never copied into annotations.
+- Documented values that come from the domain (e.g. allowed `operation` names) MUST be generated from it (`config.OpenApiConfig`), never copied into annotations. Problem Details examples MUST be produced by the advice itself (`adapter.in.web.ProblemExamples`), so each is the exact body clients get.
 
 ## 5. Code style
 
@@ -77,6 +78,7 @@ Write tests first (red → green → refactor).
 | Domain unit | JUnit + AssertJ | Every operation and every edge case listed in DOMAIN-MODEL.md; every business rule |
 | Web slice | MockMvc web-slice test | Controller mapping, request parsing, every Problem Details error path in the PRD |
 | Smoke | `@SpringBootTest` (one) | Context starts; one happy-path request end to end |
+| API docs | `@SpringBootTest` + MockMvc (`ApiDocumentationTest`; springdoc is not in the web slice) | Section 4 OpenAPI rules |
 | Architecture | ArchUnit | Section 2 dependency rules |
 
 - No coverage-percentage gate. Instead: every operation, every business rule and every error path MUST have a test.
@@ -104,3 +106,4 @@ Write tests first (red → green → refactor).
 | Date | Change |
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
+| 2026-11-10 | `add-api-docs`: §2 diagram matches the ArchUnit rule (`config` → application, domain; nothing depends on `adapter.in.web`); §4 Problem Details examples come from `ProblemExamples`; §6 adds the `ApiDocumentationTest` row |
