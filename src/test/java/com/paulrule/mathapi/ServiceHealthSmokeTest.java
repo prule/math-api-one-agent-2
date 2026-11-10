@@ -47,6 +47,19 @@ class ServiceHealthSmokeTest {
                 .containsExactlyInAnyOrder("self", "health", "health-path");
     }
 
+    @Test
+    void performsACalculationEndToEnd() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/v1/calculations"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{\"operation\": \"ADD\", \"a\": 0.1, \"b\": \"0.2\"}"))
+                .build();
+
+        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(response.body()).path("result").asString()).isEqualTo("0.3");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"/actuator/env", "/actuator/beans", "/actuator/info"})
     void otherOperationalEndpointsAreNotServed(String path) throws Exception {
