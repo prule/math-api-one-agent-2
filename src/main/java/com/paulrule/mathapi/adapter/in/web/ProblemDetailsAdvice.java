@@ -79,7 +79,7 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
         return problem;
     }
 
-    private static ProblemDetail invalidRequest() {
+    static ProblemDetail invalidRequest() {
         return problem(HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request", INVALID_REQUEST_DETAIL);
     }
 

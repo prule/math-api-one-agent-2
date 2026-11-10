@@ -1,0 +1,51 @@
+# api-documentation Specification
+
+## Purpose
+Lets client developers discover and try the API from a generated OpenAPI 3.1 description that always matches the running code, including every Operation and every Problem Details error.
+
+## Requirements
+
+### Requirement: OpenAPI description and UI are served
+The service SHALL serve an OpenAPI 3.1 JSON description at `GET /v3/api-docs` and an interactive UI at `GET /swagger-ui.html`, without authentication.
+
+#### Scenario: Description is served
+- **WHEN** a client sends `GET /v3/api-docs`
+- **THEN** the response is `200` JSON whose `openapi` field starts with `3.1`
+
+#### Scenario: UI is served
+- **WHEN** a client sends `GET /swagger-ui.html`
+- **THEN** the response is `200`, or a redirect to a page that responds `200`
+
+### Requirement: Calculation request and response documented
+The description SHALL document `POST /api/v1/calculations` with its request body (`operation`, `a`, `b` all required; `a` and `b` accept a JSON number or string; `operation` lists exactly the supported Operation names) and its `200` response as `application/json` with `operation`, `a`, `b` and `result` as strings.
+
+#### Scenario: Allowed operations come from the domain
+- **WHEN** the description is read
+- **THEN** the request's `operation` enumerates exactly the supported Operations, in declaration order (today `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`)
+
+#### Scenario: Operands accept number or string
+- **WHEN** the description is read
+- **THEN** the request's `a` and `b` each allow both `number` and `string`
+
+#### Scenario: Success response is JSON strings
+- **WHEN** the description is read
+- **THEN** the `200` response has media type `application/json` (not `*/*`) and every property of its schema is a `string`
+
+### Requirement: Every Problem Details response documented with examples
+The description SHALL list, for `POST /api/v1/calculations`, the `400`, `415` and `422` responses as `application/problem+json`, with one example per Problem Details type the endpoint can return: `invalid-request`, `unknown-operation` and `operand-out-of-range` (BR-1) under `400`, `division-by-zero` (BR-2) under `422`. Each example SHALL be the whole body the API actually returns for that error, and the documented `ProblemDetail` schema SHALL list only the fields that appear on the wire.
+
+#### Scenario: Error responses and examples
+- **WHEN** the description is read
+- **THEN** `400` has examples whose `type` is `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range`, and `422` has one whose `type` is `/problems/division-by-zero`
+
+#### Scenario: Schema lists only wire fields
+- **WHEN** the description is read
+- **THEN** the `ProblemDetail` schema's properties are exactly `type`, `title`, `status`, `detail` and `instance`
+
+#### Scenario: Unsupported media type documented
+- **WHEN** the description is read
+- **THEN** `POST /api/v1/calculations` also lists a `415` response as `application/problem+json`
+
+#### Scenario: Examples match real responses
+- **WHEN** the API is sent a request that fails with each documented type
+- **THEN** the response body's `type`, `title`, `status`, `detail` and `instance` equal the documented example's (the unknown-operation example, for `NOT_AN_OPERATION`, lists every supported Operation)
