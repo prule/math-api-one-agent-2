@@ -28,8 +28,15 @@ class CalculationTest {
         "MULTIPLY, -2, 3, -6",
         "MULTIPLY, 1.25, -0.004, -0.005",
         "MULTIPLY, 0.001, 0.001, 0.000001",
+        "DIVIDE, 2, 3, 0.6666666666666666666666666666666667",
+        "DIVIDE, 10000000000000000000000000000000005, 10, 1000000000000000000000000000000000",
+        "DIVIDE, 10000000000000000000000000000000015, 10, 1000000000000000000000000000000002",
+        "DIVIDE, 1, 4, 0.25",
+        "DIVIDE, 1, -8, -0.125",
+        "DIVIDE, 100, 0.5, 200",
+        "DIVIDE, 0.00, 7, 0",
     })
-    void performsExactlyAndNormalisesPerBR4(Operation operation, String a, String b, String expected) {
+    void performsPerBR3AndNormalisesPerBR4(Operation operation, String a, String b, String expected) {
         BigDecimal result = new Calculation(operation, new BigDecimal(a), new BigDecimal(b)).result();
 
         assertThat(result.toPlainString()).isEqualTo(expected);

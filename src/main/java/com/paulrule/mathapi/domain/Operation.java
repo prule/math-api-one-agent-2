@@ -1,6 +1,7 @@
 package com.paulrule.mathapi.domain;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 /** The closed set of Operations. Each is exact unless its business rule says otherwise (BR-3). */
 public enum Operation {
@@ -20,6 +21,15 @@ public enum Operation {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             return a.multiply(b);
+        }
+    },
+    DIVIDE {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            if (b.signum() == 0) { // every zero representation (BR-2)
+                throw new DivisionByZeroException();
+            }
+            return a.divide(b, MathContext.DECIMAL128); // BR-3
         }
     };
 

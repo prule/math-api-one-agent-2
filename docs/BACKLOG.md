@@ -10,7 +10,7 @@
 |---|------|--------|-----------------|
 | 1 | Walking skeleton | Done | `add-walking-skeleton` |
 | 2 | Exact operations: add, subtract, multiply | Done | `add-exact-arithmetic` |
-| 3 | Divide | Not started | |
+| 3 | Divide | Done | `add-divide` |
 | 4 | Operand limits | Not started | |
 | 5 | OpenAPI documentation | Not started | |
 | 5a | API docs toggle per environment (`prod` profile) | Not started | |
