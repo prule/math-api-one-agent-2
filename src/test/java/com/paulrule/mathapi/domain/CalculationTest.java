@@ -3,12 +3,17 @@ package com.paulrule.mathapi.domain;
 import static com.paulrule.mathapi.domain.Operation.ADD;
 import static com.paulrule.mathapi.domain.Operation.SUBTRACT;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class CalculationTest {
 
@@ -63,5 +68,55 @@ class CalculationTest {
         assertThatNullPointerException().isThrownBy(() -> new Calculation(null, BigDecimal.ONE, BigDecimal.ONE));
         assertThatNullPointerException().isThrownBy(() -> new Calculation(ADD, null, BigDecimal.ONE));
         assertThatNullPointerException().isThrownBy(() -> new Calculation(ADD, BigDecimal.ONE, null));
+    }
+
+    static Stream<String> operandsAtTheLimits() {
+        return Stream.of("1E+1000", "1E-1000", "-1E+1000", "9".repeat(100));
+    }
+
+    static Stream<String> operandsOnePastTheLimits() {
+        return Stream.of("1E+1001", "1E-1001", "1" + "0".repeat(100), "1e999999999", "0E+1001");
+    }
+
+    @ParameterizedTest
+    @MethodSource("operandsAtTheLimits")
+    void acceptsOperandsAtTheLimitsPerBR1(String operand) {
+        BigDecimal value = new BigDecimal(operand);
+
+        assertThatNoException().isThrownBy(() -> new Calculation(ADD, value, BigDecimal.ONE));
+        assertThatNoException().isThrownBy(() -> new Calculation(ADD, BigDecimal.ONE, value));
+    }
+
+    @ParameterizedTest
+    @MethodSource("operandsOnePastTheLimits")
+    void rejectsOperandsOnePastTheLimitsPerBR1(String operand) {
+        BigDecimal value = new BigDecimal(operand);
+
+        assertThatExceptionOfType(OperandOutOfRangeException.class)
+                .isThrownBy(() -> new Calculation(ADD, value, BigDecimal.ONE))
+                .withMessageStartingWith("Operand a ")
+                .withMessageNotContaining(operand);
+        assertThatExceptionOfType(OperandOutOfRangeException.class)
+                .isThrownBy(() -> new Calculation(ADD, BigDecimal.ONE, value))
+                .withMessageStartingWith("Operand b ")
+                .withMessageNotContaining(operand);
+    }
+
+    // Math.abs(Integer.MIN_VALUE) is negative, so a scale check written with abs() would let this through.
+    @Test
+    void rejectsTheMostNegativeScalePerBR1() {
+        BigDecimal scaleAtIntMin = new BigDecimal(BigInteger.ONE, Integer.MIN_VALUE);
+
+        assertThatExceptionOfType(OperandOutOfRangeException.class)
+                .isThrownBy(() -> new Calculation(ADD, scaleAtIntMin, BigDecimal.ONE));
+    }
+
+    @Test
+    void reportsTheFirstOutOfRangeOperandPerBR1() {
+        BigDecimal tooBig = new BigDecimal("1E+1001");
+
+        assertThatExceptionOfType(OperandOutOfRangeException.class)
+                .isThrownBy(() -> new Calculation(ADD, tooBig, tooBig))
+                .withMessageStartingWith("Operand a ");
     }
 }

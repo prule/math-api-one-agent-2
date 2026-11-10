@@ -1,6 +1,7 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -30,7 +31,8 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     private static final URI ABOUT_BLANK = URI.create("about:blank");
 
     private static final String INVALID_REQUEST_DETAIL =
-            "The request body must be JSON with operation, a and b; a and b must be decimal numbers.";
+            "The request body must be JSON with operation, a and b; a and b must be decimal numbers."
+                    + " The body may be at most 16,384 characters, and no value more than 1,000.";
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -61,6 +63,11 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DivisionByZeroException.class)
     ProblemDetail divisionByZero(DivisionByZeroException ex) {
         return problem(HttpStatus.UNPROCESSABLE_CONTENT, "division-by-zero", "Division by zero", ex.getMessage());
+    }
+
+    @ExceptionHandler(OperandOutOfRangeException.class)
+    ProblemDetail operandOutOfRange(OperandOutOfRangeException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

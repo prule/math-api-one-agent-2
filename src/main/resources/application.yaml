@@ -1,3 +1,12 @@
 spring:
   application:
     name: math-api
+  # PRD §3.2 request limits, enforced while parsing (before any number is built) -> invalid-request.
+  # max-number-length restates Jackson's default so the limit does not move with an upgrade.
+  jackson:
+    factory:
+      constraints:
+        read:
+          max-document-length: 16384
+          max-number-length: 1000
+          max-string-length: 1000
