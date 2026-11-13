@@ -40,7 +40,7 @@ The description SHALL document `POST /api/v1/calculations` with its request body
 
 #### Scenario: Allowed operations come from the domain
 - **WHEN** the description is read
-- **THEN** the request's `operation` enumerates exactly the supported Operations, in declaration order (today `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`)
+- **THEN** the request's `operation` enumerates exactly the supported Operations, in declaration order
 
 #### Scenario: Operands accept number or string
 - **WHEN** the description is read
@@ -51,11 +51,11 @@ The description SHALL document `POST /api/v1/calculations` with its request body
 - **THEN** the `200` response has media type `application/json` (not `*/*`) and every property of its schema is a `string`
 
 ### Requirement: Every Problem Details response documented with examples
-The description SHALL list, for `POST /api/v1/calculations`, the `400`, `415` and `422` responses as `application/problem+json`, with one example per Problem Details type the endpoint can return: `invalid-request`, `unknown-operation` and `operand-out-of-range` (BR-1) under `400`, `division-by-zero` (BR-2) under `422`. Each example SHALL be the whole body the API actually returns for that error, and the documented `ProblemDetail` schema SHALL list only the fields that appear on the wire.
+The description SHALL list, for `POST /api/v1/calculations`, the `400`, `415` and `422` responses as `application/problem+json`, with one example per Problem Details type the endpoint can return (listed in the first scenario). Each example SHALL be the whole body the API actually returns for that error, and the documented `ProblemDetail` schema SHALL list only the fields that appear on the wire.
 
 #### Scenario: Error responses and examples
 - **WHEN** the description is read
-- **THEN** `400` has examples whose `type` is `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range`, and `422` has one whose `type` is `/problems/division-by-zero`
+- **THEN** `400` has examples whose `type` is `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range` (BR-1), and `422` has examples whose `type` is `/problems/division-by-zero` (BR-2), `/problems/invalid-exponent` (BR-5) and `/problems/result-out-of-range` (BR-6)
 
 #### Scenario: Schema lists only wire fields
 - **WHEN** the description is read
@@ -67,4 +67,8 @@ The description SHALL list, for `POST /api/v1/calculations`, the `400`, `415` an
 
 #### Scenario: Examples match real responses
 - **WHEN** the API is sent a request that fails with each documented type
-- **THEN** the response body's `type`, `title`, `status`, `detail` and `instance` equal the documented example's (the unknown-operation example, for `NOT_AN_OPERATION`, lists every supported Operation)
+- **THEN** the response body's `type`, `title`, `status`, `detail` and `instance` equal the documented example's
+
+#### Scenario: Unknown-operation example lists exactly the supported Operations
+- **WHEN** the description is read
+- **THEN** the Operation names listed in the `unknown-operation` example's `detail` equal the supported Operations, in declaration order

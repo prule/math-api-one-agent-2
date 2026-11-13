@@ -45,7 +45,7 @@ public class CalculationController {
                             schema = @Schema(implementation = ProblemDetail.class)))
     @ApiResponse(
             responseCode = "422",
-            description = "Division by zero",
+            description = "Valid input that breaks a business rule; one example per type",
             content =
                     @Content(
                             mediaType = MediaType.APPLICATION_PROBLEM_JSON_VALUE,

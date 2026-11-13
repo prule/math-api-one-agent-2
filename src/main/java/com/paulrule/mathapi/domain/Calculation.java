@@ -23,9 +23,14 @@ public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
 
     // BR-1 reads the Operand as written, so it bounds both the arithmetic and the echoed Operand.
     private static void requireInRange(BigDecimal operand, String name) {
-        // Two comparisons, not Math.abs: abs(Integer.MIN_VALUE) is negative and would pass.
-        if (operand.precision() > MAX_PRECISION || operand.scale() > MAX_SCALE || operand.scale() < -MAX_SCALE) {
+        if (operand.precision() > MAX_PRECISION || !scaleInRange(operand.scale())) {
             throw new OperandOutOfRangeException(name);
         }
+    }
+
+    /** The BR-1 scale bounds, also used for a POWER Result (BR-6). */
+    static boolean scaleInRange(int scale) {
+        // Two comparisons, not Math.abs: abs(Integer.MIN_VALUE) is negative and would pass.
+        return scale <= MAX_SCALE && scale >= -MAX_SCALE;
     }
 }

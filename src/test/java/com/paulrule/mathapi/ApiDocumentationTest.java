@@ -109,7 +109,8 @@ class ApiDocumentationTest {
         apiDocs()
                 .extractingPath(CALCULATE + ".responses.422.content['application/problem+json'].examples[*].value.type")
                 .asArray()
-                .containsExactly("/problems/division-by-zero");
+                .containsExactlyInAnyOrder(
+                        "/problems/division-by-zero", "/problems/invalid-exponent", "/problems/result-out-of-range");
     }
 
     @ParameterizedTest(name = "{1}")
@@ -120,6 +121,8 @@ class ApiDocumentationTest {
                 "400 | unknown-operation    | {\"operation\": \"NOT_AN_OPERATION\", \"a\": 1, \"b\": 2}",
                 "400 | operand-out-of-range | {\"operation\": \"ADD\", \"a\": 1, \"b\": \"1E+1001\"}",
                 "422 | division-by-zero     | {\"operation\": \"DIVIDE\", \"a\": 1, \"b\": 0}",
+                "422 | invalid-exponent     | {\"operation\": \"POWER\", \"a\": 2, \"b\": 0.5}",
+                "422 | result-out-of-range  | {\"operation\": \"POWER\", \"a\": 100, \"b\": 999}",
             })
     void documentedExampleIsTheRealResponse(String status, String type, String request) throws Exception {
         String examplePath = CALCULATE + ".responses." + status + ".content['application/problem+json'].examples['"
@@ -136,6 +139,21 @@ class ApiDocumentationTest {
         for (String field : new String[] {"type", "title", "status", "detail", "instance"}) {
             assertThat(response).bodyJson().extractingPath("$." + field).isEqualTo(example.get(field));
         }
+    }
+
+    // The example is built once at startup; this proves it lists every Operation, not a stale set. Parsed, not
+    // rebuilt, so adding an Operation needs no edit here.
+    @Test
+    void unknownOperationExampleListsExactlyTheSupportedOperations() throws Exception {
+        String detail = JsonPath.read(
+                apiDocsJson(),
+                CALCULATE
+                        + ".responses.400.content['application/problem+json'].examples['unknown-operation'].value.detail");
+        String list = detail.substring(detail.indexOf(": ") + 2, detail.length() - 1);
+
+        assertThat(list.split(", "))
+                .containsExactly(
+                        Arrays.stream(Operation.values()).map(Operation::name).toArray(String[]::new));
     }
 
     private String apiDocsJson() throws Exception {

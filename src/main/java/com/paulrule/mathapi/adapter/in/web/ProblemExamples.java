@@ -1,7 +1,9 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.InvalidExponentException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
+import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
@@ -53,7 +55,9 @@ class ProblemExamples implements OpenApiCustomizer {
                 ProblemDetailsAdvice.invalidRequest(),
                 advice.unknownOperation(new UnknownOperationException("NOT_AN_OPERATION")),
                 advice.operandOutOfRange(new OperandOutOfRangeException("b")),
-                advice.divisionByZero(new DivisionByZeroException()));
+                advice.divisionByZero(new DivisionByZeroException()),
+                advice.invalidExponent(new InvalidExponentException()),
+                advice.resultOutOfRange(new ResultOutOfRangeException()));
         // Spring fills instance from the request path; set it so each example is the whole real body.
         examples.forEach(problem -> problem.setInstance(URI.create(CalculationController.PATH)));
         return examples;
