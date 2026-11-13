@@ -127,3 +127,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-10 | `add-exact-arithmetic`: §3.2 errors outside the table (framework errors, `500`) use `type` `about:blank` |
+| 2026-11-13 | `disable-api-docs-in-prod`: §3.3 `prod` profile built as described (`application-prod.yaml`, `ApiDocumentationDisabledTest`); no contract change |

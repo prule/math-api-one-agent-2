@@ -79,6 +79,7 @@ Write tests first (red → green → refactor).
 | Web slice | MockMvc web-slice test | Controller mapping, request parsing, every Problem Details error path in the PRD |
 | Smoke | `@SpringBootTest` (one) | Context starts; one happy-path request end to end |
 | API docs | `@SpringBootTest` + MockMvc (`ApiDocumentationTest`; springdoc is not in the web slice) | Section 4 OpenAPI rules |
+| Profile | `@SpringBootTest` + `@ActiveProfiles` per profile file (e.g. `ApiDocumentationDisabledTest`) | Section 8 profile behaviour |
 | Architecture | ArchUnit | Section 2 dependency rules |
 
 - No coverage-percentage gate. Instead: every operation, every business rule and every error path MUST have a test.
@@ -107,3 +108,4 @@ Write tests first (red → green → refactor).
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-10 | `add-api-docs`: §2 diagram matches the ArchUnit rule (`config` → application, domain; nothing depends on `adapter.in.web`); §4 Problem Details examples come from `ProblemExamples`; §6 adds the `ApiDocumentationTest` row |
+| 2026-11-13 | `disable-api-docs-in-prod`: §8 `prod` profile and its `ApiDocumentationDisabledTest` built as described; §6 adds the Profile test row |
