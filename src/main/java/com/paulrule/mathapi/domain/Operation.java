@@ -5,25 +5,25 @@ import java.math.MathContext;
 
 /** The closed set of Operations. Each is exact unless its business rule says otherwise (BR-3). */
 public enum Operation {
-    ADD {
+    ADD(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             return a.add(b);
         }
     },
-    SUBTRACT {
+    SUBTRACT(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             return a.subtract(b);
         }
     },
-    MULTIPLY {
+    MULTIPLY(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             return a.multiply(b);
         }
     },
-    DIVIDE {
+    DIVIDE(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             if (b.signum() == 0) { // every zero representation (BR-2)
@@ -32,7 +32,7 @@ public enum Operation {
             return a.divide(b, MathContext.DECIMAL128); // BR-3
         }
     },
-    POWER {
+    POWER(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             // BR-5, compared as BigDecimal first so an exponent like 1E+1000 cannot overflow intValueExact.
@@ -55,7 +55,7 @@ public enum Operation {
             return result;
         }
     },
-    MODULO {
+    MODULO(2) {
         @Override
         public BigDecimal apply(BigDecimal a, BigDecimal b) {
             if (b.signum() == 0) { // every zero representation (BR-2)
@@ -63,10 +63,37 @@ public enum Operation {
             }
             return a.remainder(b); // BR-7: a - b * trunc(a / b), exact
         }
+    },
+    SQRT(1) {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            if (a.signum() < 0) { // BR-8: every zero representation is not below zero
+                throw new NegativeSquareRootException();
+            }
+            return a.sqrt(MathContext.DECIMAL128); // BR-3: correctly rounded, HALF_EVEN
+        }
+    },
+    NEGATE(1) {
+        @Override
+        public BigDecimal apply(BigDecimal a, BigDecimal b) {
+            return a.negate();
+        }
     };
 
     static final int MAX_EXPONENT = 999;
 
+    private final int arity;
+
+    Operation(int arity) {
+        this.arity = arity;
+    }
+
+    /** How many Operands this Operation takes: 1 ({@code a} only) or 2 (BR-9). */
+    public int arity() {
+        return arity;
+    }
+
+    /** {@code b} is null for a unary Operation; {@link Calculation} enforces BR-9 before calling this. */
     public abstract BigDecimal apply(BigDecimal a, BigDecimal b);
 
     /** Exact, case-sensitive lookup; {@code valueOf} would leak a JDK message for unknown or null names. */

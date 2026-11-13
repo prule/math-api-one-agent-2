@@ -141,6 +141,57 @@ class OperationTest {
         assertThatExceptionOfType(DivisionByZeroException.class).isThrownBy(() -> apply(Operation.MODULO, "7", zero));
     }
 
+    @Test
+    void declaresEachArity() {
+        assertThat(Arrays.stream(Operation.values()).filter(op -> op.arity() == 1))
+                .containsExactly(Operation.SQRT, Operation.NEGATE);
+        assertThat(Arrays.stream(Operation.values()).filter(op -> op.arity() != 1))
+                .allMatch(op -> op.arity() == 2);
+    }
+
+    @ParameterizedTest(name = "√{0} = {1}")
+    @CsvSource({
+        "4, 2",
+        "0.25, 0.5",
+        "2, 1.414213562373095048801688724209698",
+        "10, 3.162277660168379331998893544432719",
+        "1.00000000000000000000000000000000100000000000000000000000000000000025, 1",
+        "1.00000000000000000000000000000000300000000000000000000000000000000225, 1.000000000000000000000000000000002",
+        "0, 0",
+        "-0, 0",
+        "0.00, 0"
+    })
+    void takesTheSquareRootPerBR3(String a, String result) {
+        assertThat(Operation.SQRT
+                        .apply(new BigDecimal(a), null)
+                        .stripTrailingZeros()
+                        .toPlainString())
+                .isEqualTo(result);
+    }
+
+    @Test
+    void takesTheSquareRootOfTheLargestOperand() {
+        assertThat(Operation.SQRT.apply(new BigDecimal("1E+1000"), null)).isEqualByComparingTo("1E+500");
+    }
+
+    @ParameterizedTest(name = "√{0}")
+    @ValueSource(strings = {"-1", "-0.01"})
+    void rejectsTheSquareRootOfANegativePerBR8(String a) {
+        assertThatExceptionOfType(NegativeSquareRootException.class)
+                .isThrownBy(() -> Operation.SQRT.apply(new BigDecimal(a), null))
+                .withMessage("The square root of a negative number is undefined.");
+    }
+
+    @ParameterizedTest(name = "-({0}) = {1}")
+    @CsvSource({"5, -5", "-2.50, 2.5", "0, 0", "-0, 0", "0.00, 0"})
+    void negatesExactlyPerBR3(String a, String result) {
+        assertThat(Operation.NEGATE
+                        .apply(new BigDecimal(a), null)
+                        .stripTrailingZeros()
+                        .toPlainString())
+                .isEqualTo(result);
+    }
+
     private static BigDecimal apply(Operation operation, String a, String b) {
         return operation.apply(new BigDecimal(a), new BigDecimal(b));
     }

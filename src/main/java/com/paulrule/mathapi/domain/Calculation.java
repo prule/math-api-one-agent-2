@@ -3,6 +3,7 @@ package com.paulrule.mathapi.domain;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/** One Operation applied to its Operands; {@code b} is null for a unary Operation (BR-9). */
 public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
 
     static final int MAX_PRECISION = 100;
@@ -11,9 +12,13 @@ public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
     public Calculation {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(a, "a");
-        Objects.requireNonNull(b, "b");
+        if (operation.arity() == 1 ? b != null : b == null) { // BR-9, before BR-1
+            throw new ArityMismatchException(operation);
+        }
         requireInRange(a, "a");
-        requireInRange(b, "b");
+        if (b != null) {
+            requireInRange(b, "b");
+        }
     }
 
     /** The Result, with trailing zeros stripped (BR-4); plain notation is rendered by the caller. */

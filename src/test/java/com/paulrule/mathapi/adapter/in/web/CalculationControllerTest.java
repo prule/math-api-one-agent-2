@@ -61,6 +61,21 @@ class CalculationControllerTest {
                 "{\"operation\": \"MODULO\", \"a\": -7.5, \"b\": 2}               | -1.5",
                 "{\"operation\": \"MODULO\", \"a\": 6, \"b\": 3}                  | 0",
                 "{\"operation\": \"MODULO\", \"a\": \"1E+1000\", \"b\": 7}      | 4",
+                "{\"operation\": \"SQRT\", \"a\": 4}                                | 2",
+                "{\"operation\": \"SQRT\", \"a\": \"0.25\"}                       | 0.5",
+                "{\"operation\": \"SQRT\", \"a\": 2}                                | 1.414213562373095048801688724209698",
+                "{\"operation\": \"SQRT\", \"a\": 10}                               | 3.162277660168379331998893544432719",
+                "{\"operation\": \"SQRT\", \"a\": \"1.00000000000000000000000000000000100000000000000000000000000000000025\"} | 1",
+                "{\"operation\": \"SQRT\", \"a\": \"1.00000000000000000000000000000000300000000000000000000000000000000225\"} | 1.000000000000000000000000000000002",
+                "{\"operation\": \"SQRT\", \"a\": 0}                                | 0",
+                "{\"operation\": \"SQRT\", \"a\": \"-0\"}                         | 0",
+                "{\"operation\": \"SQRT\", \"a\": \"0.00\"}                       | 0",
+                "{\"operation\": \"NEGATE\", \"a\": 5}                              | -5",
+                "{\"operation\": \"NEGATE\", \"a\": \"-2.50\"}                    | 2.5",
+                "{\"operation\": \"NEGATE\", \"a\": 0}                              | 0",
+                "{\"operation\": \"NEGATE\", \"a\": \"-0\"}                       | 0",
+                "{\"operation\": \"NEGATE\", \"a\": \"0.00\"}                     | 0",
+                "{\"operation\": \"NEGATE\", \"a\": 5, \"b\": null}               | -5",
             })
     void returnsTheExactResultNormalisedPerBR4(String body, String result) {
         assertThat(post(body))
@@ -109,7 +124,8 @@ class CalculationControllerTest {
                 "{\"operation\": \"ADD\", \"a\": true, \"b\": 1}",
                 "{\"operation\": \"ADD\", \"a\": {}, \"b\": 1}",
                 "{\"operation\": \"ADD\", \"a\": [1], \"b\": 1}",
-                "{\"operation\": \"NOPE\", \"a\": 1}",
+                "{\"operation\": \"NOPE\", \"b\": 1}",
+                "{\"operation\": \"ADD\", \"b\": 1}",
             })
     void rejectsAnInvalidRequestBeforeLookingAtTheOperation(String body) {
         assertProblem(post(body), 400, "/problems/invalid-request");
@@ -174,6 +190,45 @@ class CalculationControllerTest {
                         () -> post("{\"operation\": \"POWER\", \"a\": " + nines + ", \"b\": " + b + "}")),
                 422,
                 "/problems/result-out-of-range");
+    }
+
+    @Test
+    void echoesAUnaryCalculationWithoutB() {
+        assertThat(post("{\"operation\": \"NEGATE\", \"a\": \"-2.50\"}"))
+                .hasStatusOk()
+                .bodyJson()
+                .isStrictlyEqualTo("{\"operation\": \"NEGATE\", \"a\": \"-2.50\", \"result\": \"2.5\"}");
+    }
+
+    @Test
+    void takesTheSquareRootOfTheLargestOperand() {
+        assertThat(post("{\"operation\": \"SQRT\", \"a\": \"1E+1000\"}"))
+                .hasStatusOk()
+                .bodyJson()
+                .extractingPath("$.result")
+                .isEqualTo("1" + "0".repeat(500));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(
+            delimiter = '|',
+            value = {
+                "{\"operation\": \"SQRT\", \"a\": 4, \"b\": 0}       | SQRT takes one operand, a; omit b.",
+                "{\"operation\": \"NEGATE\", \"a\": 4, \"b\": \"1\"} | NEGATE takes one operand, a; omit b.",
+                "{\"operation\": \"ADD\", \"a\": 1}                    | ADD takes two operands, a and b.",
+                "{\"operation\": \"ADD\", \"a\": 1, \"b\": null}     | ADD takes two operands, a and b.",
+            })
+    void rejectsTheWrongNumberOfOperandsPerBR9(String body, String detail) {
+        MvcTestResult result = post(body);
+
+        assertProblem(result, 400, "/problems/invalid-request");
+        assertThat(result).bodyJson().extractingPath("$.detail").isEqualTo(detail);
+    }
+
+    @ParameterizedTest(name = "√{0}")
+    @ValueSource(strings = {"-1", "\"-0.01\""})
+    void rejectsTheSquareRootOfANegativePerBR8(String a) {
+        assertProblem(post("{\"operation\": \"SQRT\", \"a\": " + a + "}"), 422, "/problems/negative-square-root");
     }
 
     @ParameterizedTest(name = "b = {0}")
@@ -280,6 +335,22 @@ class CalculationControllerTest {
                 post("{\"operation\": \"DIVIDE\", \"a\": \"1E+1001\", \"b\": 0}"),
                 400,
                 "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void reportsAnUnknownOperationBeforeTheOperandCount() {
+        assertProblem(post("{\"operation\": \"NOPE\", \"a\": 1}"), 400, "/problems/unknown-operation");
+    }
+
+    @Test
+    void reportsTheOperandCountBeforeOperandLimits() {
+        assertProblem(
+                post("{\"operation\": \"SQRT\", \"a\": \"1E+1001\", \"b\": 1}"), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void reportsOperandLimitsBeforeANegativeSquareRoot() {
+        assertProblem(post("{\"operation\": \"SQRT\", \"a\": \"-1E+1001\"}"), 400, "/problems/operand-out-of-range");
     }
 
     @Test

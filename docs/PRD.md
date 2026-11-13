@@ -129,3 +129,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-10 | `add-exact-arithmetic`: §3.2 errors outside the table (framework errors, `500`) use `type` `about:blank` |
 | 2026-11-13 | `disable-api-docs-in-prod`: §3.3 `prod` profile built as described (`application-prod.yaml`, `ApiDocumentationDisabledTest`); no contract change |
 | 2026-11-13 | `add-power-modulo`: `POWER` and `MODULO` built as §3.1–3.2 describe (first post-v1 backlog item; still API v1 per §3.4), with `invalid-exponent` and `result-out-of-range` |
+| 2026-11-13 | `add-unary-operations`: `SQRT`, `NEGATE` and BR-9 Operand count built as §3.1–3.2 describe; `b` optional, omitted from unary responses; a request that is both unknown and missing `b` now reports `unknown-operation` (the §3.2 order) |

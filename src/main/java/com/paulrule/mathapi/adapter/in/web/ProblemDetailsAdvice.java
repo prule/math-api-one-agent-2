@@ -1,7 +1,9 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.ArityMismatchException;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.InvalidExponentException;
+import com.paulrule.mathapi.domain.NegativeSquareRootException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
@@ -33,7 +35,8 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     private static final URI ABOUT_BLANK = URI.create("about:blank");
 
     private static final String INVALID_REQUEST_DETAIL =
-            "The request body must be JSON with operation, a and b; a and b must be decimal numbers."
+            "The request body must be JSON with operation and a, plus b for a binary operation;"
+                    + " a and b must be decimal numbers."
                     + " The body may be at most 16,384 characters, and no value more than 1,000.";
 
     @Override
@@ -70,6 +73,18 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(OperandOutOfRangeException.class)
     ProblemDetail operandOutOfRange(OperandOutOfRangeException ex) {
         return problem(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range", ex.getMessage());
+    }
+
+    // BR-9 is reported as invalid-request, with a detail naming the Operands the Operation takes.
+    @ExceptionHandler(ArityMismatchException.class)
+    ProblemDetail arityMismatch(ArityMismatchException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "invalid-request", "Invalid request", ex.getMessage());
+    }
+
+    @ExceptionHandler(NegativeSquareRootException.class)
+    ProblemDetail negativeSquareRoot(NegativeSquareRootException ex) {
+        return problem(
+                HttpStatus.UNPROCESSABLE_CONTENT, "negative-square-root", "Negative square root", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidExponentException.class)

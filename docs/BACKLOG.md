@@ -15,7 +15,7 @@
 | 5 | OpenAPI documentation | Done | `add-api-docs` |
 | 5a | API docs toggle per environment (`prod` profile) | Done | `disable-api-docs-in-prod` |
 | 6 | More binary operations (power, modulo) | Done | `add-power-modulo` |
-| 7 | Unary operations (sqrt, negate) | Not started | |
+| 7 | Unary operations (sqrt, negate) | Done | `add-unary-operations` |
 | 8 | Operations discovery endpoint | Not started | |
 
 Items 1–5 complete PRD v1; 5a is a v1 follow-up. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).

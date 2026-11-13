@@ -109,3 +109,4 @@ Write tests first (red → green → refactor).
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-10 | `add-api-docs`: §2 diagram matches the ArchUnit rule (`config` → application, domain; nothing depends on `adapter.in.web`); §4 Problem Details examples come from `ProblemExamples`; §6 adds the `ApiDocumentationTest` row |
 | 2026-11-13 | `disable-api-docs-in-prod`: §8 `prod` profile and its `ApiDocumentationDisabledTest` built as described; §6 adds the Profile test row |
+| 2026-11-13 | `add-unary-operations`: §3 "add the `Operation` constant with its arity" is now how the code works (`Operation(int arity)`); no rule change |

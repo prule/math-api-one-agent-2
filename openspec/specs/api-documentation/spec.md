@@ -36,7 +36,7 @@ When the `prod` profile is active, the service SHALL NOT serve the OpenAPI descr
 - **THEN** the first response is `200` and the second is `404` Problem Details
 
 ### Requirement: Calculation request and response documented
-The description SHALL document `POST /api/v1/calculations` with its request body (`operation`, `a`, `b` all required; `a` and `b` accept a JSON number or string; `operation` lists exactly the supported Operation names) and its `200` response as `application/json` with `operation`, `a`, `b` and `result` as strings.
+The description SHALL document `POST /api/v1/calculations` with its request body (`operation` and `a` required, `b` optional (BR-9); `a` and `b` accept a JSON number or string; `operation` lists exactly the supported Operation names) and its `200` response as `application/json` with `operation`, `a`, `b` and `result` as strings.
 
 #### Scenario: Allowed operations come from the domain
 - **WHEN** the description is read
@@ -50,12 +50,20 @@ The description SHALL document `POST /api/v1/calculations` with its request body
 - **WHEN** the description is read
 - **THEN** the `200` response has media type `application/json` (not `*/*`) and every property of its schema is a `string`
 
+#### Scenario: Unary response documented without b
+- **WHEN** the description is read
+- **THEN** the `200` schema's `b` property says it is absent for a unary Operation
+
+#### Scenario: b is optional
+- **WHEN** the description is read
+- **THEN** the request schema's `required` list is exactly `operation` and `a`
+
 ### Requirement: Every Problem Details response documented with examples
 The description SHALL list, for `POST /api/v1/calculations`, the `400`, `415` and `422` responses as `application/problem+json`, with one example per Problem Details type the endpoint can return (listed in the first scenario). Each example SHALL be the whole body the API actually returns for that error, and the documented `ProblemDetail` schema SHALL list only the fields that appear on the wire.
 
 #### Scenario: Error responses and examples
 - **WHEN** the description is read
-- **THEN** `400` has examples whose `type` is `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range` (BR-1), and `422` has examples whose `type` is `/problems/division-by-zero` (BR-2), `/problems/invalid-exponent` (BR-5) and `/problems/result-out-of-range` (BR-6)
+- **THEN** `400` has examples whose `type` is `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range` (BR-1), and `422` has examples whose `type` is `/problems/division-by-zero` (BR-2), `/problems/invalid-exponent` (BR-5), `/problems/negative-square-root` (BR-8) and `/problems/result-out-of-range` (BR-6)
 
 #### Scenario: Schema lists only wire fields
 - **WHEN** the description is read
