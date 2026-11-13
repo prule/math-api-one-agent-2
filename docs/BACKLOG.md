@@ -14,7 +14,7 @@
 | 4 | Operand limits | Done | `add-operand-limits` |
 | 5 | OpenAPI documentation | Done | `add-api-docs` |
 | 5a | API docs toggle per environment (`prod` profile) | Done | `disable-api-docs-in-prod` |
-| 6 | More binary operations (power, modulo) | Not started | |
+| 6 | More binary operations (power, modulo) | Done | `add-power-modulo` |
 | 7 | Unary operations (sqrt, negate) | Not started | |
 | 8 | Operations discovery endpoint | Not started | |
 

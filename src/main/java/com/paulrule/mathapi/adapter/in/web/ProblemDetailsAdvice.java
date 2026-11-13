@@ -1,7 +1,9 @@
 package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.InvalidExponentException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
+import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import org.slf4j.Logger;
@@ -68,6 +70,16 @@ class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     @ExceptionHandler(OperandOutOfRangeException.class)
     ProblemDetail operandOutOfRange(OperandOutOfRangeException ex) {
         return problem(HttpStatus.BAD_REQUEST, "operand-out-of-range", "Operand out of range", ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidExponentException.class)
+    ProblemDetail invalidExponent(InvalidExponentException ex) {
+        return problem(HttpStatus.UNPROCESSABLE_CONTENT, "invalid-exponent", "Invalid exponent", ex.getMessage());
+    }
+
+    @ExceptionHandler(ResultOutOfRangeException.class)
+    ProblemDetail resultOutOfRange(ResultOutOfRangeException ex) {
+        return problem(HttpStatus.UNPROCESSABLE_CONTENT, "result-out-of-range", "Result out of range", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

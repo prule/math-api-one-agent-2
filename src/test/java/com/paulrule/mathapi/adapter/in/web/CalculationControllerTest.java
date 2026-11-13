@@ -47,6 +47,20 @@ class CalculationControllerTest {
                 "{\"operation\": \"DIVIDE\", \"a\": 1, \"b\": 4}                       | 0.25",
                 "{\"operation\": \"DIVIDE\", \"a\": \"100\", \"b\": \"0.5\"}       | 200",
                 "{\"operation\": \"DIVIDE\", \"a\": \"10000000000000000000000000000000015\", \"b\": \"10\"} | 1000000000000000000000000000000002",
+                "{\"operation\": \"POWER\", \"a\": 2, \"b\": 10}                  | 1024",
+                "{\"operation\": \"POWER\", \"a\": 2, \"b\": -2}                  | 0.25",
+                "{\"operation\": \"POWER\", \"a\": 3, \"b\": -1}                  | 0.3333333333333333333333333333333333",
+                "{\"operation\": \"POWER\", \"a\": -2, \"b\": 3}                  | -8",
+                "{\"operation\": \"POWER\", \"a\": 2, \"b\": 200}                 | 1606938044258990275541962092341163000000000000000000000000000",
+                "{\"operation\": \"POWER\", \"a\": 0, \"b\": 0}                   | 1",
+                "{\"operation\": \"POWER\", \"a\": 2, \"b\": \"3.0\"}           | 8",
+                "{\"operation\": \"POWER\", \"a\": \"1.00\", \"b\": 999}        | 1",
+                "{\"operation\": \"MODULO\", \"a\": -7, \"b\": 3}                 | -1",
+                "{\"operation\": \"MODULO\", \"a\": 7, \"b\": -3}                 | 1",
+                "{\"operation\": \"MODULO\", \"a\": 5.5, \"b\": 2}                | 1.5",
+                "{\"operation\": \"MODULO\", \"a\": -7.5, \"b\": 2}               | -1.5",
+                "{\"operation\": \"MODULO\", \"a\": 6, \"b\": 3}                  | 0",
+                "{\"operation\": \"MODULO\", \"a\": \"1E+1000\", \"b\": 7}      | 4",
             })
     void returnsTheExactResultNormalisedPerBR4(String body, String result) {
         assertThat(post(body))
@@ -108,6 +122,58 @@ class CalculationControllerTest {
                 post("{\"operation\": \"DIVIDE\", \"a\": " + a + ", \"b\": " + zero + "}"),
                 422,
                 "/problems/division-by-zero");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(
+            delimiter = '|',
+            value = {
+                "{\"operation\": \"MODULO\", \"a\": 7, \"b\": 0}",
+                "{\"operation\": \"MODULO\", \"a\": 7, \"b\": \"-0.0\"}",
+                "{\"operation\": \"POWER\", \"a\": \"0.00\", \"b\": -1}",
+            })
+    void rejectsModuloByZeroAndZeroToANegativePowerPerBR2(String body) {
+        assertProblem(post(body), 422, "/problems/division-by-zero");
+    }
+
+    @ParameterizedTest(name = "2 ^ {0}")
+    @ValueSource(strings = {"0.5", "1000", "-1000"})
+    void rejectsAnInvalidExponentPerBR5(String b) {
+        assertProblem(
+                post("{\"operation\": \"POWER\", \"a\": 2, \"b\": " + b + "}"), 422, "/problems/invalid-exponent");
+    }
+
+    @ParameterizedTest(name = "1.001 ^ {0}")
+    @ValueSource(strings = {"999", "-999"})
+    void acceptsAnExponentAtTheBoundPerBR5(String b) {
+        assertThat(post("{\"operation\": \"POWER\", \"a\": 1.001, \"b\": " + b + "}"))
+                .hasStatusOk();
+    }
+
+    @ParameterizedTest(name = "{0} ^ {1}")
+    @CsvSource({"100, 999", "'\"0.01\"', 999", "100, -999", "'\"0.01\"', -999"})
+    void rejectsAPowerResultOutOfRangePerBR6(String a, String b) {
+        assertProblem(
+                post("{\"operation\": \"POWER\", \"a\": " + a + ", \"b\": " + b + "}"),
+                422,
+                "/problems/result-out-of-range");
+    }
+
+    @ParameterizedTest(name = "b = {0}")
+    @ValueSource(strings = {"999", "-999"})
+    void raisesTheWorstOperandsWithinOneSecond(String b) {
+        String nearOne = "\"1." + "0".repeat(98) + "1\"";
+        String nines = "\"" + "9".repeat(100) + "\"";
+        assertThat(assertTimeoutPreemptively(
+                        Duration.ofSeconds(1),
+                        () -> post("{\"operation\": \"POWER\", \"a\": " + nearOne + ", \"b\": " + b + "}")))
+                .hasStatusOk();
+        assertProblem(
+                assertTimeoutPreemptively(
+                        Duration.ofSeconds(1),
+                        () -> post("{\"operation\": \"POWER\", \"a\": " + nines + ", \"b\": " + b + "}")),
+                422,
+                "/problems/result-out-of-range");
     }
 
     @ParameterizedTest(name = "b = {0}")
@@ -214,6 +280,19 @@ class CalculationControllerTest {
                 post("{\"operation\": \"DIVIDE\", \"a\": \"1E+1001\", \"b\": 0}"),
                 400,
                 "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void reportsOperandLimitsBeforeAnInvalidExponent() {
+        assertProblem(
+                post("{\"operation\": \"POWER\", \"a\": \"1E+1001\", \"b\": 0.5}"),
+                400,
+                "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void reportsAnInvalidExponentBeforeDivisionByZero() {
+        assertProblem(post("{\"operation\": \"POWER\", \"a\": 0, \"b\": -1000}"), 422, "/problems/invalid-exponent");
     }
 
     // BR-1 rejects every input known to reach the 500 handler, so it is called directly.

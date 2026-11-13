@@ -68,3 +68,4 @@ Operation.apply(a, b) → Result   (b is null for a unary Operation)
 | Date | Change |
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
+| 2026-11-13 | `add-power-modulo`: BR-2 (MODULO, `0 ^ negative`), BR-3, BR-5, BR-6, BR-7 and the §3 `POWER`/`MODULO` edge cases built as written |
