@@ -69,3 +69,4 @@ Operation.apply(a, b) → Result   (b is null for a unary Operation)
 |------|--------|
 | 2026-11-10 | Copied from math-api (its final v1 docs) for the one-agent rerun with reviews from the start |
 | 2026-11-13 | `add-power-modulo`: BR-2 (MODULO, `0 ^ negative`), BR-3, BR-5, BR-6, BR-7 and the §3 `POWER`/`MODULO` edge cases built as written |
+| 2026-11-13 | `add-unary-operations`: Arity (`Operation.arity()`), `ArityMismatchException`, `NegativeSquareRootException`, BR-3 (`SQRT`), BR-8, BR-9 and the §3 `SQRT`/`NEGATE` edge cases built as written |

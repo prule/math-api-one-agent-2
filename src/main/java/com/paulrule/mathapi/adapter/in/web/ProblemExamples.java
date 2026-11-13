@@ -2,6 +2,7 @@ package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.InvalidExponentException;
+import com.paulrule.mathapi.domain.NegativeSquareRootException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
@@ -57,6 +58,7 @@ class ProblemExamples implements OpenApiCustomizer {
                 advice.operandOutOfRange(new OperandOutOfRangeException("b")),
                 advice.divisionByZero(new DivisionByZeroException()),
                 advice.invalidExponent(new InvalidExponentException()),
+                advice.negativeSquareRoot(new NegativeSquareRootException()),
                 advice.resultOutOfRange(new ResultOutOfRangeException()));
         // Spring fills instance from the request path; set it so each example is the whole real body.
         examples.forEach(problem -> problem.setInstance(URI.create(CalculationController.PATH)));

@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class CalculationTest {
@@ -67,7 +68,37 @@ class CalculationTest {
     void rejectsMissingComponents() {
         assertThatNullPointerException().isThrownBy(() -> new Calculation(null, BigDecimal.ONE, BigDecimal.ONE));
         assertThatNullPointerException().isThrownBy(() -> new Calculation(ADD, null, BigDecimal.ONE));
-        assertThatNullPointerException().isThrownBy(() -> new Calculation(ADD, BigDecimal.ONE, null));
+        assertThatNullPointerException().isThrownBy(() -> new Calculation(Operation.SQRT, null, null));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Operation.class)
+    void requiresExactlyTheArityOfOperandsPerBR9(Operation operation) {
+        BigDecimal missingOrExtraB = operation.arity() == 1 ? BigDecimal.ONE : null;
+
+        assertThatExceptionOfType(ArityMismatchException.class)
+                .isThrownBy(() -> new Calculation(operation, BigDecimal.ONE, missingOrExtraB))
+                .withMessageStartingWith(operation.name() + " takes ");
+    }
+
+    @Test
+    void namesTheOperandsEachArityTakes() {
+        assertThat(new ArityMismatchException(Operation.SQRT)).hasMessage("SQRT takes one operand, a; omit b.");
+        assertThat(new ArityMismatchException(ADD)).hasMessage("ADD takes two operands, a and b.");
+    }
+
+    @Test
+    void checksArityBeforeOperandLimits() {
+        assertThatExceptionOfType(ArityMismatchException.class)
+                .isThrownBy(() -> new Calculation(Operation.SQRT, new BigDecimal("1E+1001"), BigDecimal.ONE));
+    }
+
+    @Test
+    void aUnaryCalculationHasNoB() {
+        Calculation calculation = new Calculation(Operation.NEGATE, new BigDecimal("1E+1000"), null);
+
+        assertThat(calculation.b()).isNull();
+        assertThat(calculation.result()).isEqualByComparingTo("-1E+1000");
     }
 
     static Stream<String> operandsAtTheLimits() {

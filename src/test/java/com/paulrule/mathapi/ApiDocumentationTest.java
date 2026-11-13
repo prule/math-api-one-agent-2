@@ -63,7 +63,7 @@ class ApiDocumentationTest {
         apiDocs()
                 .extractingPath("$.components.schemas.CalculationRequest.required")
                 .asArray()
-                .containsExactlyInAnyOrder("operation", "a", "b");
+                .containsExactlyInAnyOrder("operation", "a"); // b is optional (BR-9)
     }
 
     @Test
@@ -77,6 +77,13 @@ class ApiDocumentationTest {
                 .asArray()
                 .hasSize(4)
                 .containsOnly("string");
+    }
+
+    @Test
+    void documentsThatAUnaryResponseHasNoB() {
+        apiDocs()
+                .extractingPath("$.components.schemas.CalculationResponse.properties.b.description")
+                .isEqualTo("Absent for a unary Operation");
     }
 
     @Test
@@ -110,7 +117,10 @@ class ApiDocumentationTest {
                 .extractingPath(CALCULATE + ".responses.422.content['application/problem+json'].examples[*].value.type")
                 .asArray()
                 .containsExactlyInAnyOrder(
-                        "/problems/division-by-zero", "/problems/invalid-exponent", "/problems/result-out-of-range");
+                        "/problems/division-by-zero",
+                        "/problems/invalid-exponent",
+                        "/problems/negative-square-root",
+                        "/problems/result-out-of-range");
     }
 
     @ParameterizedTest(name = "{1}")
@@ -123,6 +133,7 @@ class ApiDocumentationTest {
                 "422 | division-by-zero     | {\"operation\": \"DIVIDE\", \"a\": 1, \"b\": 0}",
                 "422 | invalid-exponent     | {\"operation\": \"POWER\", \"a\": 2, \"b\": 0.5}",
                 "422 | result-out-of-range  | {\"operation\": \"POWER\", \"a\": 100, \"b\": 999}",
+                "422 | negative-square-root | {\"operation\": \"SQRT\", \"a\": -1}",
             })
     void documentedExampleIsTheRealResponse(String status, String type, String request) throws Exception {
         String examplePath = CALCULATE + ".responses." + status + ".content['application/problem+json'].examples['"
