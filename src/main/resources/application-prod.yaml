@@ -1,0 +1,12 @@
+# prod: any environment reachable beyond developers (STANDARDS §8). Only what differs from application.yaml.
+springdoc:
+  # PRD §3.3: the OpenAPI description and Swagger UI are for developers, not served in prod.
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+spring:
+  web:
+    resources:
+      # Spring's default static handlers would still serve the swagger-ui webjar (/webjars/**); the app has no static content.
+      add-mappings: false
